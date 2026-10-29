@@ -19,7 +19,6 @@ jobs:
       - name: Extract Android project
         run: |
           unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
-          find android-project -name gradlew -type f -exec chmod +x {} \;
 
       - name: Build APK
         run: |
