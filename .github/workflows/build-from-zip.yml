@@ -1,3 +1,4 @@
+
 name: Build Briz King APK
 
 on:
@@ -6,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Get project files
         uses: actions/checkout@v4
@@ -20,13 +22,24 @@ jobs:
         run: |
           unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
 
-      - name: Build APK
+      - name: Locate and Build Android Project
         run: |
-          cd android-project/
-          gradle assembleDebug
+          PROJECT_DIR=$(dirname "$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)")
+
+          echo "Project directory: $PROJECT_DIR"
+
+          cd "$PROJECT_DIR"
+
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            gradle assembleDebug
+          fi
 
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
           name: BrizKing-Construction-Record-Keeper-APK
-          path: android-project/BrizKing_Construction_Record_Keeper_Android/app/build/outputs/apk/debug/app-debug.apk
+          path: android-project/**/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
