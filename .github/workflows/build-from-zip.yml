@@ -22,7 +22,7 @@ jobs:
 
       - name: Build APK
         run: |
-          cd android-project/BrizKing_Construction_Record_Keeper_Android
+          cd android-project/
           gradle assembleDebug
 
       - name: Save APK
