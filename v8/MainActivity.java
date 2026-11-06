@@ -3,6 +3,14 @@ package com.brizking.constructionrecords;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ClipData;
+import android.content.ContentValues;
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.os.Build;
+import android.provider.MediaStore;
+import android.util.Base64;
+import java.io.OutputStream;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.*;
@@ -64,6 +72,44 @@ public class MainActivity extends Activity {
                     startActivity(Intent.createChooser(send, "Share Briz King estimate"));
                 } catch (Exception ex) {
                     Toast.makeText(MainActivity.this, "Sharing is not available on this device.", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface public void sharePdfBase64(final String encoded, final String filename) {
+            runOnUiThread(() -> {
+                Uri pdfUri = null;
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Downloads.DISPLAY_NAME,
+                                (filename == null || filename.trim().isEmpty()) ? "BrizKing-Estimate.pdf" : filename);
+                        values.put(MediaStore.Downloads.MIME_TYPE, "application/pdf");
+                        values.put(MediaStore.Downloads.RELATIVE_PATH, "Download/BrizKing");
+                        values.put(MediaStore.Downloads.IS_PENDING, 1);
+                        ContentResolver resolver = getContentResolver();
+                        pdfUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                        if (pdfUri == null) throw new Exception("Could not create PDF in Downloads");
+                        byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
+                        try (OutputStream out = resolver.openOutputStream(pdfUri)) {
+                            if (out == null) throw new Exception("Could not write PDF");
+                            out.write(bytes);
+                            out.flush();
+                        }
+                        ContentValues ready = new ContentValues();
+                        ready.put(MediaStore.Downloads.IS_PENDING, 0);
+                        resolver.update(pdfUri, ready, null, null);
+                        Intent send = new Intent(Intent.ACTION_SEND);
+                        send.setType("application/pdf");
+                        send.putExtra(Intent.EXTRA_STREAM, pdfUri);
+                        send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        send.setClipData(ClipData.newUri(getContentResolver(), "Briz King Estimate", pdfUri));
+                        startActivity(Intent.createChooser(send, "Share Briz King PDF"));
+                    } else {
+                        Toast.makeText(MainActivity.this, "PDF sharing requires Android 10 or newer. Use Export PDF to print or save.", Toast.LENGTH_LONG).show();
+                    }
+                } catch (Exception ex) {
+                    Toast.makeText(MainActivity.this, "Could not share PDF: " + ex.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
         }
