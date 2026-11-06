@@ -42,7 +42,8 @@ jobs:
           cp record-sharing.js "$ASSET_DIR/record-sharing.js"
           JAVA_FILE=$(find android-project -type f -path "*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java" -print -quit)
           if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
-          cp v8/MainActivity.java "$JAVA_FILE"\n          cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
+          cp v8/MainActivity.java "$JAVA_FILE"
+          cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
           # Keep Estimate Desk separate; integrate Master Lists into existing Record Keeper forms.
           cat > "$ASSET_DIR/print-bridge.js" <<'EOF'
           window.print = function () {
