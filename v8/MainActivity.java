@@ -11,6 +11,8 @@ import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Base64;
 import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.*;
@@ -19,6 +21,7 @@ import android.print.*;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
+    private static final int REQUEST_RESTORE_BACKUP = 7319;
     private WebView webView, printWebView;
 
     @Override protected void onCreate(Bundle b) {
@@ -130,6 +133,58 @@ public class MainActivity extends Activity {
             });
         }
 
+
+        @JavascriptInterface public void saveBackupBase64(final String encoded, final String filename) {
+            runOnUiThread(() -> {
+                try {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                        Toast.makeText(MainActivity.this, "Backup file saving requires Android 10 or newer.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Downloads.DISPLAY_NAME,
+                            (filename == null || filename.trim().isEmpty()) ? "BrizKing-Backup.json" : filename);
+                    values.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+                    values.put(MediaStore.Downloads.RELATIVE_PATH, "Download/BrizKing");
+                    values.put(MediaStore.Downloads.IS_PENDING, 1);
+                    ContentResolver resolver = getContentResolver();
+                    Uri backupUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                    if (backupUri == null) throw new Exception("Could not create backup file");
+                    byte[] bytes = Base64.decode(encoded, Base64.DEFAULT);
+                    try (OutputStream out = resolver.openOutputStream(backupUri)) {
+                        if (out == null) throw new Exception("Could not write backup file");
+                        out.write(bytes);
+                        out.flush();
+                    }
+                    ContentValues ready = new ContentValues();
+                    ready.put(MediaStore.Downloads.IS_PENDING, 0);
+                    resolver.update(backupUri, ready, null, null);
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("application/json");
+                    send.putExtra(Intent.EXTRA_STREAM, backupUri);
+                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    send.setClipData(ClipData.newUri(getContentResolver(), "Briz King Backup", backupUri));
+                    startActivity(Intent.createChooser(send, "Save or share Briz King backup"));
+                } catch (Exception ex) {
+                    Toast.makeText(MainActivity.this, "Could not save backup: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface public void openBackupFile() {
+            runOnUiThread(() -> {
+                try {
+                    Intent open = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    open.addCategory(Intent.CATEGORY_OPENABLE);
+                    open.setType("*/*");
+                    open.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/json", "text/plain"});
+                    startActivityForResult(open, REQUEST_RESTORE_BACKUP);
+                } catch (Exception ex) {
+                    Toast.makeText(MainActivity.this, "Could not open backup picker: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
         @JavascriptInterface public void printHtml(final String html, final String title) {
             runOnUiThread(() -> {
                 printWebView = new WebView(MainActivity.this);
@@ -146,6 +201,24 @@ public class MainActivity extends Activity {
                 });
                 printWebView.loadDataWithBaseURL(null, html, "text/HTML", "UTF-8", null);
             });
+        }
+    }
+
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_RESTORE_BACKUP && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            try (InputStream in = getContentResolver().openInputStream(data.getData());
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                if (in == null) throw new Exception("Could not open selected backup");
+                byte[] buffer = new byte[8192];
+                int count;
+                while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+                String encoded = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+                webView.evaluateJavascript("window.BrizKingBackup && window.BrizKingBackup.restoreBase64('" + encoded + "')", null);
+            } catch (Exception ex) {
+                Toast.makeText(this, "Could not read backup: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
         }
     }
 
