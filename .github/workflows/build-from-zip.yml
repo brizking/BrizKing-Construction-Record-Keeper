@@ -9,27 +9,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Get project files
         uses: actions/checkout@v4
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Extract Android project
-        run: |
-          unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
-
+        run: unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
       - name: Install image conversion utility
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
-
-      - name: Install Briz King Version 14 branding and features
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+      - name: Install Briz King Version 15 branding and features
         run: |
           ASSET_DIR=$(find android-project -type d -path "*/app/src/main/assets" -print -quit)
           if [ -z "$ASSET_DIR" ] || [ ! -f "$ASSET_DIR/index.html" ]; then
@@ -40,12 +32,11 @@ jobs:
           cp estimate.js "$ASSET_DIR/estimate.js"
           cp masterlist-integration.js "$ASSET_DIR/masterlist-integration.js"
           cp record-sharing.js "$ASSET_DIR/record-sharing.js"
+          cp project-sheet-share.js "$ASSET_DIR/project-sheet-share.js"
           JAVA_FILE=$(find android-project -type f -path "*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java" -print -quit)
           if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
           cp v8/MainActivity.java "$JAVA_FILE"
           cp backup-restore.js "$ASSET_DIR/backup-restore.js"
-          # Keep Estimate Desk separate; integrate Master Lists into existing Record Keeper forms.
-          # Project Costing is intentionally not installed in the app.
           cat > "$ASSET_DIR/print-bridge.js" <<'EOF'
           window.print = function () {
             if (window.BrizKingNative && window.BrizKingNative.printHtml) {
@@ -55,9 +46,8 @@ jobs:
             }
           };
           EOF
-          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n<script src="record-sharing.js"></script>\n<script src="backup-restore.js"></script>\n<script src="print-bridge.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          echo "Version 14: Project Costing removed; Record Keeper, Master List integration, Estimate Desk, PDF/text sharing and backup/restore retained"
-          # Apply the supplied Briz King Concept logo to all Android launcher icon densities.
+          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n<script src="record-sharing.js"></script>\n<script src="project-sheet-share.js"></script>\n<script src="backup-restore.js"></script>\n<script src="print-bridge.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          echo "Version 15: Project Sheet Share as PDF button added beside Print / Save PDF; existing sharing, backup/restore and Master List retained; Project Costing remains removed"
           GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
           if [ -z "$GRADLE_FILE" ]; then echo "App Gradle file not found"; exit 1; fi
           APP_DIR=$(dirname "$GRADLE_FILE")
@@ -72,30 +62,19 @@ jobs:
           done
           MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
           sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
-          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 14/; s/versionCode[[:space:]]+[0-9]+/versionCode 14/' "$GRADLE_FILE"
-          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "14.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "14.0"/' "$GRADLE_FILE"
-          echo "Briz King Version 14 configured"
-
+          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 15/; s/versionCode[[:space:]]+[0-9]+/versionCode 15/' "$GRADLE_FILE"
+          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "15.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "15.0"/' "$GRADLE_FILE"
+          echo "Briz King Version 15 configured"
       - name: Locate and Build Android Project
         run: |
           SETTINGS_FILE=$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
-          if [ -z "$SETTINGS_FILE" ]; then
-            echo "Gradle settings file not found"
-            exit 1
-          fi
+          if [ -z "$SETTINGS_FILE" ]; then echo "Gradle settings file not found"; exit 1; fi
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-          echo "Project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            gradle assembleDebug
-          fi
-
+          if [ -f gradlew ]; then chmod +x gradlew; ./gradlew assembleDebug; else gradle assembleDebug; fi
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: BrizKing-Construction-Record-Keeper-V14-APK
+          name: BrizKing-Construction-Record-Keeper-V15-APK
           path: android-project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
