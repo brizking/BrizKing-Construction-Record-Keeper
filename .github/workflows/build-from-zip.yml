@@ -43,8 +43,17 @@ jobs:
           if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
           cp v8/MainActivity.java "$JAVA_FILE"
           # Keep Estimate Desk separate; integrate Master Lists into existing Record Keeper forms.
-          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          echo "V9 Master List integration and separate Estimate Desk installed; separate Project Costing removed"
+          cat > "$ASSET_DIR/print-bridge.js" <<'EOF'
+          window.print = function () {
+            if (window.BrizKingNative && window.BrizKingNative.printHtml) {
+              window.BrizKingNative.printHtml(document.documentElement.outerHTML, document.title || "BrizKing-Project-Sheet");
+            } else {
+              alert("PDF printing is available in the installed Briz King app.");
+            }
+          };
+          EOF
+          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n<script src="print-bridge.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          echo "V10 native PDF print bridge, Android share chooser, Master List integration and separate Estimate Desk installed"
           # Apply the supplied Briz King Concept logo to all Android launcher icon densities.
           GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
           if [ -z "$GRADLE_FILE" ]; then echo "App Gradle file not found"; exit 1; fi
@@ -58,12 +67,12 @@ jobs:
             convert brizking-icon.jpg -resize "${size}x${size}^" -gravity center -extent "${size}x${size}" "$RES_DIR/mipmap-$density/ic_launcher.png"
             cp "$RES_DIR/mipmap-$density/ic_launcher.png" "$RES_DIR/mipmap-$density/ic_launcher_round.png"
           done
-          # Increment the Android version to 8 for the next install.
+          # Increment the Android version for the next install.
           MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
           sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
           sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 10/; s/versionCode[[:space:]]+[0-9]+/versionCode 10/' "$GRADLE_FILE"
           sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "10.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "10.0"/' "$GRADLE_FILE"
-          echo "Briz King Version 9 logo and version applied"
+          echo "Briz King Version 10 logo and version applied"
 
       - name: Locate and Build Android Project
         run: |
