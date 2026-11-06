@@ -38,13 +38,13 @@ jobs:
           fi
           cp masterlist.js "$ASSET_DIR/masterlist.js"
           cp estimate.js "$ASSET_DIR/estimate.js"
-          cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
+          cp masterlist-integration.js "$ASSET_DIR/masterlist-integration.js"
           JAVA_FILE=$(find android-project -type f -path "*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java" -print -quit)
           if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
           cp v8/MainActivity.java "$JAVA_FILE"
-          # Load dependencies before the project-costing extension.
-          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="projectdesk.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          echo "V8 Project Costing, Master Lists and separate Estimate Desk installed"
+          # Keep Estimate Desk separate; integrate Master Lists into existing Record Keeper forms.
+          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          echo "V9 Master List integration and separate Estimate Desk installed; separate Project Costing removed"
           # Apply the supplied Briz King Concept logo to all Android launcher icon densities.
           GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
           if [ -z "$GRADLE_FILE" ]; then echo "App Gradle file not found"; exit 1; fi
@@ -61,9 +61,9 @@ jobs:
           # Increment the Android version to 8 for the next install.
           MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
           sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
-          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 8/; s/versionCode[[:space:]]+[0-9]+/versionCode 8/' "$GRADLE_FILE"
-          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "8.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "8.0"/' "$GRADLE_FILE"
-          echo "Briz King Version 8 logo and version applied"
+          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 9/; s/versionCode[[:space:]]+[0-9]+/versionCode 9/' "$GRADLE_FILE"
+          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "9.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "9.0"/' "$GRADLE_FILE"
+          echo "Briz King Version 9 logo and version applied"
 
       - name: Locate and Build Android Project
         run: |
@@ -85,6 +85,6 @@ jobs:
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: BrizKing-Construction-Record-Keeper-V8-APK
+          name: BrizKing-Construction-Record-Keeper-V9-APK
           path: android-project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
