@@ -22,6 +22,19 @@ jobs:
         run: |
           unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
 
+      - name: Install V6 Master Lists
+        run: |
+          ASSET_DIR=$(find android-project -type d -path "*/app/src/main/assets" -print -quit)
+          if [ -z "$ASSET_DIR" ] || [ ! -f "$ASSET_DIR/index.html" ]; then
+            echo "Android assets folder or index.html not found"
+            exit 1
+          fi
+          cp masterlist.js "$ASSET_DIR/masterlist.js"
+          if ! grep -q 'masterlist.js' "$ASSET_DIR/index.html"; then
+            sed -i 's#</body>#<script src="masterlist.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          fi
+          echo "V6 Master Lists installed in Android assets"
+          
       - name: Locate and Build Android Project
         run: |
           PROJECT_DIR=$(dirname "$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)")
