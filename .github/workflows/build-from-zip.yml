@@ -37,8 +37,11 @@ jobs:
           grep -q 'estimate.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="estimate.js"></script>\n</body>#' "$ASSET_DIR/index.html"
           echo "V6 Master Lists and independent Estimate Desk installed"
           # Apply the supplied Briz King Concept logo to all Android launcher icon densities.
-          RES_DIR=$(find android-project -type d -path "*/app/src/main/res" -print -quit)
-          if [ -z "$RES_DIR" ]; then echo "Android res folder not found"; exit 1; fi
+          GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
+          if [ -z "$GRADLE_FILE" ]; then echo "App Gradle file not found"; exit 1; fi
+          APP_DIR=$(dirname "$GRADLE_FILE")
+          RES_DIR="$APP_DIR/src/main/res"
+          mkdir -p "$RES_DIR"
           for spec in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
             density="${spec%%:*}"
             size="${spec##*:}"
@@ -47,10 +50,10 @@ jobs:
             cp "$RES_DIR/mipmap-$density/ic_launcher.png" "$RES_DIR/mipmap-$density/ic_launcher_round.png"
           done
           # Increment the Android version to 7 for the next install.
-          GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
-          if [ -z "$GRADLE_FILE" ]; then echo "App Gradle file not found"; exit 1; fi
-          sed -i -E 's/versionCode[[:space:]]+[0-9]+/versionCode 7/' "$GRADLE_FILE"
-          sed -i -E 's/versionName[[:space:]]+"[^"]+"/versionName "7.0"/' "$GRADLE_FILE"
+          MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
+          sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
+          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 7/; s/versionCode[[:space:]]+[0-9]+/versionCode 7/' "$GRADLE_FILE"
+          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "7.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "7.0"/' "$GRADLE_FILE"
           echo "Briz King Version 7 logo and version applied"
 
       - name: Locate and Build Android Project
