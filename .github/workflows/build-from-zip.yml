@@ -44,6 +44,7 @@ jobs:
           if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
           cp v8/MainActivity.java "$JAVA_FILE"
           cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
+          cp backup-restore.js "$ASSET_DIR/backup-restore.js"
           # Keep Estimate Desk separate; integrate Master Lists into existing Record Keeper forms.
           cat > "$ASSET_DIR/print-bridge.js" <<'EOF'
           window.print = function () {
