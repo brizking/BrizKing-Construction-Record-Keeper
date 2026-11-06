@@ -76,6 +76,22 @@ public class MainActivity extends Activity {
             });
         }
 
+
+        @JavascriptInterface public void emailText(final String recipient, final String subject, final String body) {
+            runOnUiThread(() -> {
+                try {
+                    Intent email = new Intent(Intent.ACTION_SENDTO);
+                    email.setData(Uri.parse("mailto:"));
+                    email.putExtra(Intent.EXTRA_EMAIL, new String[]{recipient == null ? "" : recipient});
+                    email.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "Briz King Construction" : subject);
+                    email.putExtra(Intent.EXTRA_TEXT, body == null ? "" : body);
+                    startActivity(Intent.createChooser(email, "Send Briz King text by email"));
+                } catch (Exception ex) {
+                    Toast.makeText(MainActivity.this, "No email app is available on this device.", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
         @JavascriptInterface public void sharePdfBase64(final String encoded, final String filename) {
             runOnUiThread(() -> {
                 Uri pdfUri = null;
