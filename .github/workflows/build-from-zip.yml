@@ -1,4 +1,3 @@
-
 name: Build Briz King APK
 
 on:
@@ -22,7 +21,7 @@ jobs:
         run: |
           unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
 
-      - name: Install V6 Master Lists
+      - name: Install V6 Master Lists and Estimate Desk
         run: |
           ASSET_DIR=$(find android-project -type d -path "*/app/src/main/assets" -print -quit)
           if [ -z "$ASSET_DIR" ] || [ ! -f "$ASSET_DIR/index.html" ]; then
@@ -30,19 +29,21 @@ jobs:
             exit 1
           fi
           cp masterlist.js "$ASSET_DIR/masterlist.js"
-          if ! grep -q 'masterlist.js' "$ASSET_DIR/index.html"; then
-            sed -i 's#</body>#<script src="masterlist.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          fi
-          echo "V6 Master Lists installed in Android assets"
-          
+          cp estimate.js "$ASSET_DIR/estimate.js"
+          grep -q 'masterlist.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="masterlist.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          grep -q 'estimate.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="estimate.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          echo "V6 Master Lists and independent Estimate Desk installed"
+
       - name: Locate and Build Android Project
         run: |
-          PROJECT_DIR=$(dirname "$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)")
-
+          SETTINGS_FILE=$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "Gradle settings file not found"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           echo "Project directory: $PROJECT_DIR"
-
           cd "$PROJECT_DIR"
-
           if [ -f gradlew ]; then
             chmod +x gradlew
             ./gradlew assembleDebug
@@ -53,6 +54,6 @@ jobs:
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: BrizKing-Construction-Record-Keeper-APK
+          name: BrizKing-Construction-Record-Keeper-V6-APK
           path: android-project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
