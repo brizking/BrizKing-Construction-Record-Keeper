@@ -1,0 +1,32 @@
+name: Extract BrizKing V5 Source
+
+on:
+  workflow_dispatch:
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get repository files
+        uses: actions/checkout@v4
+
+      - name: Extract original V5 project
+        run: |
+          mkdir -p extracted
+          unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d extracted
+
+      - name: Collect app source files
+        run: |
+          mkdir -p source-files
+          find extracted -type f \( -name "index.html" -o -name "MainActivity.java" \) -print
+          find extracted -type f -name "index.html" -exec cp --parents {} source-files/ \;
+          find extracted -type f -name "MainActivity.java" -exec cp --parents {} source-files/ \;
+          test -n "$(find source-files -type f -print -quit)"
+
+      - name: Upload source files
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrizKing-V5-Source-Files
+          path: source-files/
+          if-no-files-found: error
+          retention-days: 7
