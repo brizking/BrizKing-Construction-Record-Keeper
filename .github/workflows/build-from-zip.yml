@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y imagemagick
 
-      - name: Install Briz King Version 7 branding and features
+      - name: Install Briz King Version 8 branding and features
         run: |
           ASSET_DIR=$(find android-project -type d -path "*/app/src/main/assets" -print -quit)
           if [ -z "$ASSET_DIR" ] || [ ! -f "$ASSET_DIR/index.html" ]; then
@@ -38,6 +38,10 @@ jobs:
           fi
           cp masterlist.js "$ASSET_DIR/masterlist.js"
           cp estimate.js "$ASSET_DIR/estimate.js"
+          cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
+          grep -q 'projectdesk.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="projectdesk.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          JAVA_FILE=$(find android-project -type f -path '*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java' -print -quit)
+          cp v8/MainActivity.java "$JAVA_FILE"
           grep -q 'masterlist.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="masterlist.js"></script>\n</body>#' "$ASSET_DIR/index.html"
           grep -q 'estimate.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="estimate.js"></script>\n</body>#' "$ASSET_DIR/index.html"
           echo "V6 Master Lists and independent Estimate Desk installed"
@@ -57,9 +61,9 @@ jobs:
           # Increment the Android version to 7 for the next install.
           MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
           sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
-          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 7/; s/versionCode[[:space:]]+[0-9]+/versionCode 7/' "$GRADLE_FILE"
-          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "7.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "7.0"/' "$GRADLE_FILE"
-          echo "Briz King Version 7 logo and version applied"
+          sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 8/; s/versionCode[[:space:]]+[0-9]+/versionCode 8/' "$GRADLE_FILE"
+          sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "8.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "8.0"/' "$GRADLE_FILE"
+          echo "Briz King Version 8 logo and version applied"
 
       - name: Locate and Build Android Project
         run: |
@@ -81,6 +85,6 @@ jobs:
       - name: Save APK
         uses: actions/upload-artifact@v4
         with:
-          name: BrizKing-Construction-Record-Keeper-V7-APK
+          name: BrizKing-Construction-Record-Keeper-V8-APK
           path: android-project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
