@@ -42,7 +42,7 @@ jobs:
           cp record-sharing.js "$ASSET_DIR/record-sharing.js"
           JAVA_FILE=$(find android-project -type f -path "*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java" -print -quit)
           if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
-          cp v8/MainActivity.java "$JAVA_FILE"
+          cp v8/MainActivity.java "$JAVA_FILE"\n          cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
           # Keep Estimate Desk separate; integrate Master Lists into existing Record Keeper forms.
           cat > "$ASSET_DIR/print-bridge.js" <<'EOF'
           window.print = function () {
@@ -53,7 +53,7 @@ jobs:
             }
           };
           EOF
-          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n<script src="record-sharing.js"></script>\n<script src="print-bridge.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="masterlist-integration.js"></script>\n<script src="record-sharing.js"></script>\n<script src="projectdesk.js"></script>\n<script src="print-bridge.js"></script>\n</body>#' "$ASSET_DIR/index.html"
           echo "V11 native PDF print bridge, Android share chooser, Master List integration and separate Estimate Desk installed"
           # Apply the supplied Briz King Concept logo to all Android launcher icon densities.
           GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
@@ -73,7 +73,7 @@ jobs:
           sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
           sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 12/; s/versionCode[[:space:]]+[0-9]+/versionCode 12/' "$GRADLE_FILE"
           sed -i -E 's/versionName[[:space:]]*=[[:space:]]*"[^"]+"/versionName = "12.0"/; s/versionName[[:space:]]+"[^"]+"/versionName "12.0"/' "$GRADLE_FILE"
-          echo "Briz King Version 11 logo and version applied"
+          echo "Briz King Version 12 logo, Estimate PDF sharing and Project Sheet PDF/text sharing applied"
 
       - name: Locate and Build Android Project
         run: |
