@@ -24,6 +24,11 @@ jobs:
         run: |
           unzip -o BrizKing_Construction_Record_Keeper_V5_Phone_Build.zip -d android-project
 
+      - name: Install image conversion utility
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
       - name: Install Briz King Version 7 branding and features
         run: |
           ASSET_DIR=$(find android-project -type d -path "*/app/src/main/assets" -print -quit)
