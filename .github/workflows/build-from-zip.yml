@@ -39,12 +39,12 @@ jobs:
           cp masterlist.js "$ASSET_DIR/masterlist.js"
           cp estimate.js "$ASSET_DIR/estimate.js"
           cp v8/projectdesk.js "$ASSET_DIR/projectdesk.js"
-          grep -q 'projectdesk.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="projectdesk.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          JAVA_FILE=$(find android-project -type f -path '*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java' -print -quit)
+          JAVA_FILE=$(find android-project -type f -path "*/app/src/main/java/com/brizking/constructionrecords/MainActivity.java" -print -quit)
+          if [ -z "$JAVA_FILE" ]; then echo "MainActivity.java not found"; exit 1; fi
           cp v8/MainActivity.java "$JAVA_FILE"
-          grep -q 'masterlist.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="masterlist.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          grep -q 'estimate.js' "$ASSET_DIR/index.html" || sed -i 's#</body>#<script src="estimate.js"></script>\n</body>#' "$ASSET_DIR/index.html"
-          echo "V6 Master Lists and independent Estimate Desk installed"
+          # Load dependencies before the project-costing extension.
+          sed -i 's#</body>#<script src="masterlist.js"></script>\n<script src="estimate.js"></script>\n<script src="projectdesk.js"></script>\n</body>#' "$ASSET_DIR/index.html"
+          echo "V8 Project Costing, Master Lists and separate Estimate Desk installed"
           # Apply the supplied Briz King Concept logo to all Android launcher icon densities.
           GRADLE_FILE=$(find android-project -type f \( -path "*/app/build.gradle" -o -path "*/app/build.gradle.kts" \) -print -quit)
           if [ -z "$GRADLE_FILE" ]; then echo "App Gradle file not found"; exit 1; fi
@@ -58,7 +58,7 @@ jobs:
             convert brizking-icon.jpg -resize "${size}x${size}^" -gravity center -extent "${size}x${size}" "$RES_DIR/mipmap-$density/ic_launcher.png"
             cp "$RES_DIR/mipmap-$density/ic_launcher.png" "$RES_DIR/mipmap-$density/ic_launcher_round.png"
           done
-          # Increment the Android version to 7 for the next install.
+          # Increment the Android version to 8 for the next install.
           MANIFEST="$APP_DIR/src/main/AndroidManifest.xml"
           sed -i 's#<application#<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round"#' "$MANIFEST"
           sed -i -E 's/versionCode[[:space:]]*=[[:space:]]*[0-9]+/versionCode = 8/; s/versionCode[[:space:]]+[0-9]+/versionCode 8/' "$GRADLE_FILE"
